@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms & Conditions | Elegets AI</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="elegets-logo-cut.png" type="image/png">
+
+    <style>
+        :root {
+            --bg-body: #131314;
+            --bg-card: #1e1f20;
+            --text-primary: #e3e3e3;
+            --text-secondary: #c4c7c5;
+            --accent: #a8c7fa; 
+            --border: #444746;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- NAVIGATION --- */
+        .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 40px;
+            background: rgba(19, 19, 20, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .brand-logo { height: 32px; width: auto; border-radius: 6px; }
+        
+        .brand-text {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            background: linear-gradient(120deg, #ffffff, #a8c7fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-btn {
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s;
+            font-size: 0.9rem;
+        }
+        .back-btn:hover { color: var(--accent); }
+
+        /* --- CONTAINER --- */
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .legal-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .last-updated {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 40px;
+            display: block;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: var(--accent);
+            margin-top: 40px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        h3 {
+            font-size: 1.1rem;
+            color: #fff;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        ul {
+            list-style: none;
+            margin-bottom: 20px;
+            padding-left: 10px;
+        }
+
+        ul li {
+            position: relative;
+            padding-left: 25px;
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+        }
+
+        ul li::before {
+            content: '•';
+            color: var(--accent);
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        a.link {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: 0.2s;
+        }
+        a.link:hover { border-bottom-color: var(--accent); }
+
+        /* --- FOOTER --- */
+        .footer {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        /* --- PRINT BUTTON --- */
+        .action-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        .print-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        .print-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
+
+        @media (max-width: 768px) {
+            .legal-card { padding: 30px 20px; }
+            h1 { font-size: 2rem; }
+            .navbar { padding: 15px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="brand">
+            <img src="elegets-logo-cut.png" alt="Elegets" class="brand-logo">
+            <span class="brand-text">Elegets AI</span>
+        </a>
+        <a href="index.html" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Back to Workspace
+        </a>
+    </nav>
+
+    <div class="container">
+        
+        <div class="action-row">
+            <button class="print-btn" onclick="window.print()">
+                <i class="fas fa-print"></i> Print
+            </button>
+        </div>
+
+        <div class="legal-card">
+            <h1>Terms and Conditions</h1>
+            <span class="last-updated">Last Updated: November 29, 2025</span>
+
+            <p>Welcome to Elegets AI. By creating an account or using our services, you agree to comply with and be bound by the following terms and conditions. Please review them carefully.</p>
+
+            <h2>1. Acceptance of Terms</h2>
+            <p>By accessing or using the Elegets AI platform ("Service"), you agree to be bound by these Terms. If you disagree with any part of the terms, you may not access the Service.</p>
+
+            <h2>2. Description of Service</h2>
+            <p>Elegets AI provides an artificial intelligence-based chatbot and workspace designed for educational and technical assistance. The AI generates text and code based on user inputs.</p>
+            <h3>2.1 AI Accuracy</h3>
+            <p><strong>Important:</strong> Artificial Intelligence is an evolving field. Elegets AI may produce inaccurate, incorrect, or offensive information. Users should verify any generated code or factual claims before relying on them.</p>
+
+            <h2>3. User Accounts</h2>
+            <ul>
+                <li>You are responsible for safeguarding the password that you use to access the Service.</li>
+                <li>You agree not to disclose your password to any third party.</li>
+                <li>You must notify us immediately upon becoming aware of any breach of security or unauthorized use of your account.</li>
+            </ul>
+
+            <h2>4. Acceptable Use Policy</h2>
+            <p>You agree not to misuse the Service. Prohibited actions include:</p>
+            <ul>
+                <li>Using the service for any illegal or unauthorized purpose.</li>
+                <li>Attempting to reverse engineer or disrupt the AI backend.</li>
+                <li>Uploading malicious files or viruses via the attachment feature.</li>
+                <li>Generating content that is hate speech, harassing, or sexually explicit.</li>
+            </ul>
+
+            <h2>5. Intellectual Property</h2>
+            <p>The Service and its original content (excluding user-generated content), features, and functionality are and will remain the exclusive property of Elegets Electronics.</p>
+            <p><strong>Your Content:</strong> You retain ownership of the input you provide to the AI. However, you grant Elegets AI a license to use this input to generate responses and improve the service quality.</p>
+
+            <h2>6. Limitation of Liability</h2>
+            <p>In no event shall Elegets Electronics, its directors, employees, or partners, be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from:</p>
+            <ul>
+                <li>Your access to or use of or inability to access or use the Service.</li>
+                <li>Any conduct or content of any third party on the Service.</li>
+                <li>Any content obtained from the Service, including AI hallucinations or coding errors.</li>
+            </ul>
+
+            <h2>7. Termination</h2>
+            <p>We may terminate or suspend access to our Service immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.</p>
+
+            <h2>8. Changes to Terms</h2>
+            <p>We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will try to provide at least 30 days' notice prior to any new terms taking effect.</p>
+
+            <h2>9. Contact Us</h2>
+            <p>If you have any questions about these Terms, please contact us at:</p>
+            <p><a href="mailto:contact.elegets@gmail.com" class="link">contact.elegets@gmail.com</a></p>
+        </div>
+    </div>
+
+    <footer class="footer">
+        &copy; 2025 Elegets Electronics. All rights reserved.
+    </footer>
+
+</body>
+</html>
