@@ -111,7 +111,7 @@
         .dropdown-item.logout:hover i { color: #ff6b6b; }
 
         /* --- CHAT --- */
-        .chat-scroll-area { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 180px; scroll-behavior: smooth; display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .chat-scroll-area { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 180px; scroll-behavior: smooth; display: flex; flex-direction: column; align-items: center; }
         .chat-width-limiter { width: 100%; max-width: var(--max-width); display: flex; flex-direction: column; gap: 30px; }
         .message-wrapper.user { align-self: flex-end; max-width: 80%; display: flex; flex-direction: column; align-items: flex-end; }
         .user-bubble { background: var(--user-bubble); padding: 12px 18px; border-radius: 18px; border-top-right-radius: 4px; color: var(--text-primary); line-height: 1.6; font-size: 0.95rem; }
@@ -260,49 +260,6 @@
         }
         .policy { color: var(--accent); text-decoration: none; }
         .policy:hover { text-decoration: underline; }
-
-        /* --- NEW GREETING SCREEN --- */
-        .greeting-container {
-            width: 100%;
-            height: 100%; /* Fill available space */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            /* Adjust padding-bottom to account for input bar height so it looks vertically centered in empty space */
-            padding-bottom: 120px; 
-        }
-        
-        .greeting-title {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #ffffff 0%, #a8c7fa 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -1px;
-            opacity: 0;
-            animation: fadeInUp 0.8s ease forwards;
-        }
-
-        .greeting-subtitle {
-            font-size: 1.5rem;
-            color: #888;
-            font-weight: 500;
-            opacity: 0;
-            animation: fadeInUp 0.8s ease 0.2s forwards;
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Hide chat container initially when greeting is shown */
-        .chat-width-limiter.hidden {
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -445,14 +402,6 @@
         </div>
 
         <div class="chat-scroll-area" id="chat-scroll-area">
-            <div id="greeting-screen" class="greeting-container" style="display: none;">
-                <div class="greeting-logo">
-                    <img src="elegets-logo-cut.png" style="width: 80px; margin-bottom: 20px; border-radius:15px;">
-                </div>
-                <h1 class="greeting-title" id="greeting-text">Hello, User</h1>
-                <p class="greeting-subtitle">How can I help you today?</p>
-            </div>
-            
             <div class="chat-width-limiter" id="chat-container"></div>
         </div>
 
@@ -472,16 +421,12 @@
     </div>
 
     <script>
-    // --- CONFIGURATION ---
     const EMAILJS_SERVICE_ID = "service_2yenhc6"; 
     const EMAILJS_TEMPLATE_ID = "template_tfooqbd"; 
     const EMAILJS_PUBLIC_KEY = "NZdFltvMkjvaQcLMT"; 
-    
-    // Cloudinary Config (kept if needed for profile pics)
     const cloudinaryCloudName = 'dtz9eajwg';
     const cloudinaryUploadPreset = 'elegets_unsigned';
 
-    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyA8HrBYrVvqv3MqbXAMPhh2XSEyu4gdjNs",
         authDomain: "elegets-ai.firebaseapp.com",
@@ -493,20 +438,14 @@
         measurementId: "G-TMG681SETX"
     };
 
-    // --- INITIALIZATION ---
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
     const provider = new firebase.auth.GoogleAuthProvider();
-    
-    // ⚠️ IMPORTANT: CHANGE THIS TO YOUR PYTHON BACKEND URL
-    // If running locally use: http://localhost:5000/
-    // If deployed use: https://your-python-app.onrender.com/ (or vercel)
-    const BACKEND_URL = 'http://localhost:5000/'; 
+    const BACKEND_URL = 'https://elegets-chatbot1.vercel.app/';
 
     (function(){ emailjs.init(EMAILJS_PUBLIC_KEY); })();
 
-    // --- DOM ELEMENTS ---
     const authModal = document.getElementById('auth-modal');
     const appLoader = document.getElementById('app-loader');
     const completeProfileModal = document.getElementById('complete-profile-modal');
@@ -517,10 +456,7 @@
     const processOverlay = document.getElementById('process-overlay');
     const loadingMainText = document.getElementById('loading-main-text');
 
-    let currentUserName = "User"; // Global user name
-    let conversationHistory = JSON.parse(localStorage.getItem('elegetsHistory')) || [{ role: "system", content: "You are Elegets AI." }];
-
-    // --- HELPER FUNCTIONS ---
+    let currentUserName = "User"; // Store user name globally
 
     function toggleLoading(show, text = "Processing...") {
         loadingMainText.textContent = text;
@@ -540,28 +476,24 @@
         }
     };
 
-    function escapeHtml(text) { 
-        if(!text) return ""; 
-        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); 
-    }
-
-    // --- AUTHENTICATION LOGIC ---
-
     async function signInWithGoogle() {
         try {
             await auth.signInWithPopup(provider);
         } catch (error) {
-            console.warn("Popup failed. Falling back to Redirect...", error);
+            console.warn("Popup failed (COOP blocked). Falling back to Redirect...", error);
             try {
                 await auth.signInWithRedirect(provider);
             } catch (redirectError) {
-                authError.textContent = "Login failed. Please disable ad-blockers.";
+                authError.textContent = "Login failed. Please disable ad-blockers or try a different browser.";
                 authError.style.display = 'block';
+                console.error(redirectError);
             }
         }
     }
 
-    auth.getRedirectResult().catch(err => console.log(err));
+    auth.getRedirectResult().then((result) => {
+        if (result.user) { console.log("Redirect Login Success"); }
+    }).catch(err => console.log(err));
 
     auth.onAuthStateChanged(async (user) => {
         if (user) {
@@ -572,14 +504,14 @@
                 if (userData) {
                     authModal.style.display = "none";
                     completeProfileModal.style.display = "none";
-                    currentUserName = userData.name || "User";
+                    currentUserName = userData.name || "User"; // Set global user name
                     updateProfileUI(userData);
-                    renderHistoryFromStorage(); // Updates Greeting vs Chat
                 } else {
                     authModal.style.display = "none";
                     completeProfileModal.style.display = "flex"; 
                 }
             });
+            renderHistoryFromStorage();
         } else {
             setTimeout(() => {
                 appLoader.style.display = 'none';
@@ -609,57 +541,146 @@
         emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams).catch(err => console.error(err));
     }
 
-    // --- FORM HANDLERS ---
+    window.toggleProfileMenu = function() {
+        document.getElementById('profile-dropdown').classList.toggle('show');
+        document.getElementById('profile-trigger').classList.toggle('active');
+    }
 
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        authError.style.display = 'none';
-        toggleLoading(true, "Signing in...");
-        try { 
-            await auth.signInWithEmailAndPassword(document.getElementById('login-email').value, document.getElementById('login-password').value); 
-            toggleLoading(false);
-        } catch (error) { 
-            toggleLoading(false);
-            authError.textContent = "Invalid email or password."; 
-            authError.style.display = 'block'; 
+    document.addEventListener('click', function(event) {
+        const container = document.querySelector('.profile-container');
+        if (container && !container.contains(event.target)) {
+            document.getElementById('profile-dropdown').classList.remove('show');
+            document.getElementById('profile-trigger').classList.remove('active');
         }
     });
+
+    function switchAuthTab(tab) {
+        authError.style.display = 'none';
+        authSuccess.style.display = 'none';
+        document.getElementById('view-reset').style.display = 'none';
+        if (tab === 'login') {
+            document.getElementById('view-login').style.display = 'block';
+            document.getElementById('view-register').style.display = 'none';
+        } else {
+            document.getElementById('view-login').style.display = 'none';
+            document.getElementById('view-register').style.display = 'block';
+        }
+    }
+
+    function showResetView() {
+        document.getElementById('view-login').style.display = 'none';
+        document.getElementById('view-register').style.display = 'none';
+        document.getElementById('view-reset').style.display = 'block';
+        authError.style.display = 'none';
+    }
+
+    window.resetPassword = async function() {
+        const email = document.getElementById('reset-email').value;
+        if(!email) { authError.textContent = "Please enter your email."; authError.style.display = 'block'; return; }
+        try {
+            await auth.sendPasswordResetEmail(email);
+            authSuccess.textContent = "Reset link sent! Check your inbox and spam folder.";
+            authSuccess.style.display = 'block'; authError.style.display = 'none';
+        } catch (error) { authError.textContent = error.message; authError.style.display = 'block'; }
+    }
+
+    const uploadToCloudinary = async (file) => {
+        if (!file || file.size === 0) return null;
+        if (!cloudinaryCloudName || !cloudinaryUploadPreset) throw new Error("Cloudinary not configured.");
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", cloudinaryUploadPreset);
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/auto/upload`, { method: "POST", body: formData });
+        if (!response.ok) throw new Error(`Image upload failed: ${response.statusText}`);
+        const data = await response.json();
+        return { url: data.secure_url, type: data.resource_type, format: data.format };
+    };
+
+    async function extractTextFromFile(file) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (file.type.startsWith("image/")) {
+                    try {
+                        const { data: { text } } = await Tesseract.recognize(file, 'eng');
+                        resolve(text || "[No text found in image]");
+                    } catch (err) {
+                        console.error("OCR Failed", err);
+                        resolve("[Error reading image text]");
+                    }
+                }
+                else if (file.type === "application/pdf") {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                    let fullText = "";
+                    const maxPages = Math.min(pdf.numPages, 5); 
+                    for (let i = 1; i <= maxPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        let pageText = textContent.items.map(item => item.str).join(" ");
+                        if (pageText.trim().length === 0) {
+                             const viewport = page.getViewport({ scale: 1.5 });
+                             const canvas = document.createElement('canvas');
+                             const context = canvas.getContext('2d');
+                             canvas.height = viewport.height;
+                             canvas.width = viewport.width;
+                             await page.render({ canvasContext: context, viewport: viewport }).promise;
+                             const { data: { text } } = await Tesseract.recognize(canvas, 'eng');
+                             pageText = "[OCR] " + text;
+                        }
+                        fullText += `\n[Page ${i}]\n${pageText}`;
+                    }
+                    resolve(fullText);
+                } 
+                else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                    resolve(result.value);
+                } 
+                else if (file.type === "text/plain") {
+                    const text = await file.text();
+                    resolve(text);
+                } else {
+                    resolve(null);
+                }
+            } catch (e) {
+                console.error("Text extraction failed", e);
+                resolve(null);
+            }
+        });
+    }
 
     document.getElementById('register-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         authError.style.display = 'none';
-        
-        // Grab values
         const email = document.getElementById('reg-email').value;
         const password = document.getElementById('reg-password').value;
         const name = document.getElementById('reg-name').value;
         const phone = document.getElementById('reg-phone').value;
         const age = document.getElementById('reg-age').value;
         const city = document.getElementById('reg-city').value;
-        const file = document.getElementById('reg-pic-file').files[0];
+        const fileInput = document.getElementById('reg-pic-file');
+        const file = fileInput.files[0];
 
         if (!file) { authError.textContent = "Please select a profile picture."; authError.style.display = 'block'; return; }
-        
+        if (file.size > 5 * 1024 * 1024) { authError.textContent = "Image too large. Please use an image under 5MB."; authError.style.display = 'block'; return; }
+
         try {
             toggleLoading(true, "Optimizing profile picture...");
-            // Upload Profile Pic to Cloudinary
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("upload_preset", cloudinaryUploadPreset);
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/auto/upload`, { method: "POST", body: formData });
-            const data = await res.json();
-            const picUrl = data.secure_url;
+            // Keep Cloudinary upload for profile pictures as requested
+            const uploadData = await uploadToCloudinary(file);
+            const picUrl = uploadData.url;
+            if(!picUrl) throw new Error("Image upload failed");
 
-            toggleLoading(true, "Creating account...");
+            toggleLoading(true, "Securing account...");
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
 
+            toggleLoading(true, "Finalizing workspace...");
             const userData = {
                 uid: user.uid, name: name, email: email, phone: phone, 
                 age: age, city: city, profilePic: picUrl, 
                 termsAccepted: true, plan: 'free', createdAt: new Date().toISOString()
             };
-            
             await db.ref('users/' + user.uid).set(userData);
             sendWelcomeEmail(userData);
             toggleLoading(false);
@@ -669,20 +690,34 @@
         }
     });
 
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        authError.style.display = 'none';
+        toggleLoading(true, "Signing in...");
+        try { 
+            await auth.signInWithEmailAndPassword(document.getElementById('login-email').value, document.getElementById('login-password').value); 
+            toggleLoading(false);
+        } 
+        catch (error) { 
+            toggleLoading(false);
+            authError.textContent = "Invalid email or password."; 
+            authError.style.display = 'block'; 
+        }
+    });
+
     document.getElementById('complete-profile-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const user = auth.currentUser;
         if(!user) return;
-        
-        toggleLoading(true, "Updating...");
+        toggleLoading(true, "Updating profile...");
+        const phone = document.getElementById('comp-phone').value;
+        const age = document.getElementById('comp-age').value;
+        const city = document.getElementById('comp-city').value;
         const userData = {
             uid: user.uid, name: user.displayName, email: user.email, profilePic: user.photoURL,
-            phone: document.getElementById('comp-phone').value, 
-            age: document.getElementById('comp-age').value, 
-            city: document.getElementById('comp-city').value, 
+            phone: phone, age: age, city: city, 
             termsAccepted: true, plan: 'free', createdAt: new Date().toISOString()
         };
-        
         try {
             await db.ref('users/' + user.uid).set(userData);
             sendWelcomeEmail(userData);
@@ -695,82 +730,20 @@
         }
     });
 
-    // --- UI NAVIGATION ---
-    window.switchAuthTab = function(tab) {
-        authError.style.display = 'none';
-        document.getElementById('view-reset').style.display = 'none';
-        if (tab === 'login') {
-            document.getElementById('view-login').style.display = 'block';
-            document.getElementById('view-register').style.display = 'none';
-        } else {
-            document.getElementById('view-login').style.display = 'none';
-            document.getElementById('view-register').style.display = 'block';
-        }
-    }
+    function logout() { auth.signOut().then(() => location.reload()); }
 
-    window.showResetView = function() {
-        document.getElementById('view-login').style.display = 'none';
-        document.getElementById('view-register').style.display = 'none';
-        document.getElementById('view-reset').style.display = 'block';
-    }
-
-    window.resetPassword = async function() {
-        const email = document.getElementById('reset-email').value;
-        if(!email) { authError.textContent = "Enter email first."; authError.style.display='block'; return;}
-        try { await auth.sendPasswordResetEmail(email); authSuccess.style.display='block'; authSuccess.textContent="Link sent!"; }
-        catch(e){ authError.textContent=e.message; authError.style.display='block'; }
-    }
-
-    window.logout = function() { auth.signOut().then(() => location.reload()); }
-    
-    window.toggleSidebar = function() { 
-        document.getElementById('sidebar').classList.toggle('active'); 
-        document.getElementById('sidebar-overlay').classList.toggle('active'); 
-    }
-    
-    window.toggleProfileMenu = function() {
-        document.getElementById('profile-dropdown').classList.toggle('show');
-        document.getElementById('profile-trigger').classList.toggle('active');
-    }
-
-    // --- CHAT & FILE SYSTEM ---
-    
     const messageStore = {}; 
     const renderer = new marked.Renderer();
     renderer.code = function({ text, lang }) {
+        const code = text || "";
+        const language = lang || "text";
         const id = 'code-' + Math.random().toString(36).substr(2, 9);
-        messageStore[id] = text;
-        return `<div class="code-block-wrapper"><div class="code-header"><span class="code-lang">${lang||'text'}</span><button class="code-copy-btn" onclick="copyFromStore('${id}')"><i class="fas fa-copy"></i> Copy</button></div><pre><code class="hljs language-${lang||'text'}">${text}</code></pre></div>`;
+        messageStore[id] = code;
+        return `<div class="code-block-wrapper"><div class="code-header"><span class="code-lang">${language}</span><button class="code-copy-btn" onclick="copyFromStore('${id}')"><i class="fas fa-copy"></i> Copy</button></div><pre><code class="hljs language-${language}">${code}</code></pre></div>`;
     };
     marked.use({ renderer });
 
-    // File Text Extraction (OCR/PDF)
-    async function extractTextFromFile(file) {
-        return new Promise(async (resolve, reject) => {
-            try {
-                if (file.type.startsWith("image/")) {
-                    const { data: { text } } = await Tesseract.recognize(file, 'eng');
-                    resolve(text || "[No text found]");
-                } else if (file.type === "application/pdf") {
-                    const buffer = await file.arrayBuffer();
-                    const pdf = await pdfjsLib.getDocument(buffer).promise;
-                    let fullText = "";
-                    for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
-                        const page = await pdf.getPage(i);
-                        const content = await page.getTextContent();
-                        fullText += content.items.map(item => item.str).join(" ");
-                    }
-                    resolve(fullText);
-                } else if (file.type === "text/plain") {
-                    resolve(await file.text());
-                } else {
-                    resolve(null);
-                }
-            } catch (e) { console.error(e); resolve(null); }
-        });
-    }
-
-    // --- MAIN APP LOGIC ---
+    let conversationHistory = JSON.parse(localStorage.getItem('elegetsHistory')) || [{ role: "system", content: "You are Elegets AI." }];
 
     document.addEventListener('DOMContentLoaded', () => {
         const input = document.getElementById('user-input');
@@ -779,36 +752,17 @@
         const fileInput = document.getElementById('chat-file-input');
         const previewArea = document.getElementById('file-preview-area');
         const container = document.getElementById('chat-container');
-        const greetingScreen = document.getElementById('greeting-screen');
-        const greetingText = document.getElementById('greeting-text');
         const scrollArea = document.getElementById('chat-scroll-area');
-        
+        const voiceOverlay = document.getElementById('voice-overlay');
+        const voiceStatus = document.getElementById('voice-status');
+        const voiceTranscript = document.getElementById('voice-transcript');
+
         let pendingFiles = [];
 
-        // 1. Render History Logic (GREETING SCREEN CONTROLLER)
-        window.renderHistoryFromStorage = function() {
-            container.innerHTML = '';
-            
-            // If history has real data (more than just system prompt)
-            if (conversationHistory.length > 1) {
-                greetingScreen.style.display = 'none';
-                container.classList.remove('hidden');
-                
-                conversationHistory.forEach(msg => { 
-                    if (msg.role === 'user') renderMessage('user', msg.content); 
-                    if (msg.role === 'assistant') renderMessage('bot', msg.content); 
-                });
-                scrollToBottom();
-            } else {
-                // Show Greeting
-                greetingText.textContent = `Hello, ${currentUserName}`;
-                greetingScreen.style.display = 'flex';
-                container.classList.add('hidden');
-            }
-        }
-
         function updateActionState() {
-            if (input.value.trim().length > 0 || pendingFiles.length > 0) {
+            const hasText = input.value.trim().length > 0;
+            const hasFiles = pendingFiles.length > 0;
+            if (hasText || hasFiles) {
                 actionBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
                 actionBtn.classList.remove('mic-mode');
                 actionBtn.setAttribute('data-mode', 'send');
@@ -822,11 +776,13 @@
         }
 
         input.addEventListener('input', updateActionState);
-        
-        // File Handling
+
         attachBtn.addEventListener('click', () => fileInput.click());
+
         fileInput.addEventListener('change', (e) => {
-            Array.from(e.target.files).forEach(f => pendingFiles.push(f));
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            files.forEach(file => pendingFiles.push(file));
             updateFilePreview();
             fileInput.value = ''; 
         });
@@ -840,180 +796,273 @@
                 pendingFiles.forEach((file, index) => {
                     const tag = document.createElement('div');
                     tag.className = 'file-tag';
-                    tag.innerHTML = `<i class="fas fa-file"></i> ${file.name.substring(0,10)}... <i class="fas fa-times remove-file" data-index="${index}"></i>`;
+                    let iconClass = 'fa-file';
+                    if(file.type.includes('image')) iconClass = 'fa-image';
+                    else if(file.type.includes('pdf')) iconClass = 'fa-file-pdf';
+                    else if(file.type.includes('word')) iconClass = 'fa-file-word';
+                    tag.innerHTML = `<i class="fas ${iconClass}"></i> ${file.name.substring(0, 15)}${file.name.length > 15 ? '...' : ''} <i class="fas fa-times remove-file" data-index="${index}"></i>`;
                     previewArea.appendChild(tag);
                 });
-                document.querySelectorAll('.remove-file').forEach(i => i.addEventListener('click', (e) => {
-                    pendingFiles.splice(e.target.dataset.index, 1);
-                    updateFilePreview();
-                }));
+                document.querySelectorAll('.remove-file').forEach(icon => {
+                    icon.addEventListener('click', (e) => {
+                        const idx = parseInt(e.target.getAttribute('data-index'));
+                        pendingFiles.splice(idx, 1);
+                        updateFilePreview();
+                    });
+                });
             }
-            updateActionState();
+            updateActionState(); 
         }
 
-        // Voice Logic
-        const voiceOverlay = document.getElementById('voice-overlay');
-        const voiceStatus = document.getElementById('voice-status');
-        const voiceTranscript = document.getElementById('voice-transcript');
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, type, duration) {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playStartSound() { playTone(600, 'sine', 0.1); setTimeout(() => playTone(800, 'sine', 0.2), 100); }
+        function playStopSound() { playTone(800, 'sine', 0.1); setTimeout(() => playTone(600, 'sine', 0.2), 100); }
+
         let recognition;
-        
+        window.stopVoiceSearch = function() { if(recognition) recognition.stop(); voiceOverlay.classList.remove('active'); };
+
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
             recognition.continuous = false;
+            recognition.lang = 'en-US';
             recognition.interimResults = true;
+            let isListening = false;
 
-            window.stopVoiceSearch = function() { recognition.stop(); voiceOverlay.classList.remove('active'); };
+            function startListening() {
+                try {
+                    playStartSound();
+                    recognition.start();
+                    voiceOverlay.classList.add('active');
+                    voiceStatus.textContent = "Listening...";
+                    voiceTranscript.textContent = "";
+                    isListening = true;
+                } catch (err) { console.log(err); }
+            }
+
+            recognition.onresult = (event) => {
+                const transcript = Array.from(event.results).map(result => result[0]).map(result => result.transcript).join('');
+                voiceTranscript.textContent = transcript;
+                input.value = transcript;
+                updateActionState();
+            };
+
+            recognition.onend = () => {
+                playStopSound();
+                voiceStatus.textContent = "Processing...";
+                isListening = false;
+                if (input.value.trim().length > 0) {
+                      setTimeout(() => {
+                        voiceOverlay.classList.remove('active'); 
+                        sendMessage(); 
+                      }, 600);
+                } else {
+                    setTimeout(() => { voiceOverlay.classList.remove('active'); input.focus(); }, 800);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                voiceStatus.textContent = "Error. Try again.";
+                setTimeout(() => voiceOverlay.classList.remove('active'), 1500);
+            };
 
             actionBtn.addEventListener('click', () => {
                 const mode = actionBtn.getAttribute('data-mode');
                 if (mode === 'mic') {
-                    recognition.start();
-                    voiceOverlay.classList.add('active');
-                    voiceStatus.textContent = "Listening...";
+                    startListening();
                 } else {
                     sendMessage();
                 }
             });
 
-            recognition.onresult = (e) => {
-                const text = Array.from(e.results).map(r => r[0].transcript).join('');
-                voiceTranscript.textContent = text;
-                input.value = text;
-                updateActionState();
-            };
-
-            recognition.onend = () => {
-                voiceOverlay.classList.remove('active');
-                if(input.value.trim()) setTimeout(sendMessage, 500);
-            };
-        } else {
-            actionBtn.addEventListener('click', sendMessage);
+        } else { 
+             actionBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
+             actionBtn.classList.remove('mic-mode');
+             actionBtn.addEventListener('click', sendMessage);
         }
 
-        // --- SEND MESSAGE (STREAMING) ---
-        async function sendMessage() {
-            const text = input.value.trim();
-            if (!text && pendingFiles.length === 0) return;
+    async function sendMessage() {
+        const text = input.value.trim();
+        if (!text && pendingFiles.length === 0) return;
 
-            // 1. UI Updates: Hide Greeting, Show Chat
-            if (greetingScreen.style.display !== 'none') {
-                greetingScreen.style.display = 'none';
-                container.classList.remove('hidden');
-            }
+        let extractedFileText = "";
 
-            // 2. Process Files (Local OCR)
-            let fileContext = "";
-            if (pendingFiles.length > 0) {
-                const loadingId = showLoading("Reading files...");
-                for (let f of pendingFiles) {
-                    const c = await extractTextFromFile(f);
-                    if(c) fileContext += `\n[File Content (${f.name})]:\n${c}\n`;
-                }
-                document.getElementById(loadingId)?.remove();
-            }
-
-            // 3. Render User Message
-            renderMessage('user', text);
-            input.value = ''; 
-            pendingFiles = []; 
-            updateFilePreview();
-            updateActionState();
-
-            // 4. Construct Payload
-            let finalPrompt = text;
-            if (fileContext) finalPrompt += `\n\n[System Note: User attached files. Use this content:]${fileContext}`;
-            finalPrompt += `\n\n[System: User Name is ${currentUserName}]`;
-
-            conversationHistory.push({ role: "user", content: finalPrompt });
-            localStorage.setItem('elegetsHistory', JSON.stringify(conversationHistory));
-
-            // 5. Fetch Streaming Response
-            const loadingId = showLoading("Thinking");
-            
+        if (pendingFiles.length > 0) {
+            const loadingId = showLoading("Reading files (this may take a moment for OCR)...");
             try {
-                const response = await fetch(BACKEND_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: finalPrompt, history: conversationHistory })
-                });
-
-                document.getElementById(loadingId)?.remove();
-                if (!response.ok) throw new Error("Server Error");
-
-                // Prepare Bot Message Container
-                const botId = 'bot-' + Date.now();
-                const div = document.createElement('div');
-                div.className = 'message-wrapper bot';
-                div.innerHTML = `<div class="bot-avatar"><i class="fas fa-robot"></i></div><div id="${botId}" class="bot-content"></div>`;
-                container.appendChild(div);
-
-                // Stream Reader
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder("utf-8");
-                let botFullText = "";
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    const chunk = decoder.decode(value, { stream: true });
-                    botFullText += chunk;
-                    document.getElementById(botId).innerHTML = marked.parse(botFullText);
-                    scrollToBottom();
+                for (let file of pendingFiles) {
+                    // NOTE: Removed Cloudinary Upload logic here.
+                    // Only processing text locally.
+                    const content = await extractTextFromFile(file);
+                    if (content) {
+                        extractedFileText += `\n\n--- CONTENT OF FILE: ${file.name} ---\n${content}\n----------------\n`;
+                    }
                 }
-
-                // Finalize
-                div.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
-                messageStore[botId] = botFullText;
-                document.getElementById(botId).innerHTML += `<div class="bot-actions"><button class="action-icon-btn" onclick="copyFromStore('${botId}')"><i class="fas fa-copy"></i></button></div>`;
-                
-                conversationHistory.push({ role: "assistant", content: botFullText });
-                localStorage.setItem('elegetsHistory', JSON.stringify(conversationHistory));
-
+                document.getElementById(loadingId)?.remove();
+                renderMessage('user', text); // Render without attachments
             } catch (err) {
                 document.getElementById(loadingId)?.remove();
-                renderMessage('bot', `**Error:** ${err.message}. Ensure backend is running.`);
+                alert("Failed to process files. Please try again.");
+                return;
             }
+        } else {
+            renderMessage('user', text);
         }
 
-        // --- RENDER HELPERS ---
+        // --- PREPARE PAYLOAD FOR AI (With Hidden Context) ---
+        let promptToSend = text;
+        
+        // Append System Note (Hidden in UI, visible to AI)
+        if (extractedFileText) {
+            promptToSend += `\n\n[System Note: The user attached files. I have extracted the text (or OCR'd the image) below. Use this context to answer.]${extractedFileText}`;
+        }
+        
+        // Inject User Name into the prompt context for the AI
+        // This forces the AI to see the name even if the backend ignores the 'userName' field
+        promptToSend += `\n\n[System: The current user's name is ${currentUserName}.]`;
+
+        // NOTE: Removed logic appending Cloudinary links to the prompt
+
+        conversationHistory.push({ role: "user", content: promptToSend });
+        localStorage.setItem('elegetsHistory', JSON.stringify(conversationHistory));
+
+        input.value = '';
+        pendingFiles = []; 
+        updateFilePreview(); 
+        updateActionState(); 
+        scrollToBottom();
+
+        const loadingId = showLoading("Thinking"); // Default text with animation
+        
+        try {
+            const response = await fetch(BACKEND_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    message: promptToSend, 
+                    history: conversationHistory,
+                    userName: currentUserName // Sending user name to backend as well
+                })
+            });
+
+            if (!response.ok || !response.body) throw new Error("Backend streaming error");
+
+            document.getElementById(loadingId)?.remove();
+
+            let finalReply = '';
+            const botId = 'bot-' + Date.now() + Math.random();
+            const div = document.createElement('div');
+            div.className = 'message-wrapper bot';
+            div.innerHTML = `<div class="bot-avatar"><i class="fas fa-robot"></i></div><div id="${botId}" class="bot-content"></div>`;
+            container.appendChild(div);
+            scrollToBottom();
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let done, value;
+
+            while (true) {
+                ({ value, done } = await reader.read());
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                finalReply += chunk;
+                document.getElementById(botId).innerHTML = marked.parse(finalReply);
+                scrollToBottom();
+            }
+
+            conversationHistory.push({ role: "assistant", content: finalReply });
+            localStorage.setItem('elegetsHistory', JSON.stringify(conversationHistory));
+            div.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+
+            const msgId = botId;
+            messageStore[msgId] = finalReply;
+            document.getElementById(botId).innerHTML += `
+                <div class="bot-actions">
+                    <button class="action-icon-btn" onclick="copyFromStore('${msgId}')"><i class="fas fa-copy"></i> Copy</button>
+                    <button class="action-icon-btn" onclick="shareFromStore('${msgId}')"><i class="fas fa-share-alt"></i> Share</button>
+                </div>`;
+            
+            scrollToBottom();
+
+        } catch (error) {
+            console.error(error);
+            document.getElementById(loadingId)?.remove();
+            renderMessage('bot', "**⚠ Server Error:** Unable to fetch streaming response.");
+        }
+    }
+
+        // --- UPDATED RENDER FUNCTION ---
         window.renderMessage = function(role, rawText) {
             const div = document.createElement('div');
             div.className = `message-wrapper ${role}`;
             
-            // Clean hidden system tags for display
-            let displayText = rawText.replace(/\[System.*\]/g, "").replace(/\[File Content.*\]:[\s\S]*?(\n|$)/g, "[Attached File Content Processed]");
+            // 1. Clean the text for display (remove System Note)
+            let displayText = rawText.replace(/\[System Note:[\s\S]*?\][\s\S]*?----------------\n?/g, "");
+            displayText = displayText.replace(/\[System: The current user's name is .*?\]/g, ""); // Clean the name tag from view
             
+            // NOTE: Removed logic for parsing [User attached file links]
+
             if (role === 'user') {
                 div.innerHTML = `<div class="user-bubble">${escapeHtml(displayText)}</div>`;
             } else {
-                const id = 'msg-' + Date.now() + Math.random();
-                messageStore[id] = rawText;
-                div.innerHTML = `<div class="bot-avatar"><i class="fas fa-robot"></i></div><div class="bot-content">${marked.parse(displayText)}<div class="bot-actions"><button class="action-icon-btn" onclick="copyFromStore('${id}')"><i class="fas fa-copy"></i></button></div></div>`;
+                const msgId = 'bot-' + Date.now() + Math.random();
+                messageStore[msgId] = rawText; 
+                div.innerHTML = `<div class="bot-avatar"><i class="fas fa-robot"></i></div><div class="bot-content">${marked.parse(displayText)}<div class="bot-actions"><button class="action-icon-btn" onclick="copyFromStore('${msgId}')"><i class="fas fa-copy"></i> Copy</button><button class="action-icon-btn" onclick="shareFromStore('${msgId}')"><i class="fas fa-share-alt"></i> Share</button></div></div>`;
             }
             container.appendChild(div);
             if (role === 'bot') div.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
             scrollToBottom();
         }
 
-        function showLoading(text) {
-            const id = 'load-' + Date.now();
-            const div = document.createElement('div');
-            div.id = id; div.className = 'message-wrapper bot';
-            div.innerHTML = `<div class="bot-avatar"><i class="fas fa-robot"></i></div><div class="bot-content"><span class="thinking-dots">${text}</span></div>`;
-            container.appendChild(div); scrollToBottom(); return id;
+        window.renderHistoryFromStorage = function() {
+            const container = document.getElementById('chat-container');
+            container.innerHTML = '';
+            if (conversationHistory.length <= 1) { renderMessage('bot', `**Hey there!** 👋 I'm **Elegets AI**, your personal engineering companion! 🤖
+
+I'm here to help you with:
+⚡ **Circuit Debugging** & Wiring
+💻 **Code** (Arduino, Python, C++)
+🛒 **Component Details**
+
+*Ready to innovate?* Let's build something awesome today! 🚀`); return; }
+            conversationHistory.forEach(msg => { 
+                if (msg.role === 'user') renderMessage('user', msg.content); 
+                if (msg.role === 'assistant') renderMessage('bot', msg.content); 
+            });
         }
 
+        function showLoading(text = "Thinking") {
+            const id = 'loading-' + Date.now();
+            const div = document.createElement('div');
+            div.id = id; div.className = 'message-wrapper bot';
+            // Added animation class thinking-dots
+            div.innerHTML = `<div class="bot-avatar"><i class="fas fa-robot"></i></div><div class="bot-content" style="color:#a8c7fa"><span class="thinking-dots">${text}</span></div>`;
+            container.appendChild(div); scrollToBottom(); return id;
+        }
         function scrollToBottom() { scrollArea.scrollTop = scrollArea.scrollHeight; }
-
-        input.addEventListener('keydown', (e) => { 
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } 
-        });
+        
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
     });
 
-    window.copyFromStore = function(id) { navigator.clipboard.writeText(messageStore[id]); alert("Copied!"); };
-    window.resetChat = function() { localStorage.removeItem('elegetsHistory'); location.reload(); };
-
+    window.copyFromStore = function(id) { const text = messageStore[id]; if(text) { navigator.clipboard.writeText(text); alert("Copied!"); } }
+    window.shareFromStore = function(id) { const text = messageStore[id]; if(navigator.share && text) navigator.share({ title: 'Elegets AI', text: text }); else window.copyFromStore(id); }
+    window.toggleSidebar = function() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('sidebar-overlay').classList.toggle('active'); }
+    window.resetChat = function() { localStorage.removeItem('elegetsHistory'); conversationHistory = [{ role: "system", content: "You are Elegets AI." }]; document.getElementById('chat-container').innerHTML = ''; location.reload(); }
+    function escapeHtml(text) { if(!text) return ""; return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
     </script>
 </body>
 </html>
