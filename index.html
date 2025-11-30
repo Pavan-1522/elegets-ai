@@ -1031,7 +1031,14 @@
         window.renderHistoryFromStorage = function() {
             const container = document.getElementById('chat-container');
             container.innerHTML = '';
-            if (conversationHistory.length <= 1) { renderMessage('bot', "**Hello! I'm Elegets AI.**\n\nHow can I help you today?"); return; }
+            if (conversationHistory.length <= 1) { renderMessage('bot', `**Hey there!** 👋 I'm **Elegets AI**, your personal engineering companion! 🤖
+
+I'm here to help you with:
+⚡ **Circuit Debugging** & Wiring
+💻 **Code** (Arduino, Python, C++)
+🛒 **Component Details**
+
+*Ready to innovate?* Let's build something awesome today! 🚀`); return; }
             conversationHistory.forEach(msg => { 
                 if (msg.role === 'user') renderMessage('user', msg.content); 
                 if (msg.role === 'assistant') renderMessage('bot', msg.content); 
