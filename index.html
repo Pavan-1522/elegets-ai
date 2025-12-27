@@ -471,7 +471,7 @@
         </div>
     </div>
 
-    <script>
+  <script>
     // --- CONFIGURATION ---
     const EMAILJS_SERVICE_ID = "service_2yenhc6"; 
     const EMAILJS_TEMPLATE_ID = "template_tfooqbd"; 
@@ -500,8 +500,6 @@
     const provider = new firebase.auth.GoogleAuthProvider();
     
     // ⚠️ IMPORTANT: CHANGE THIS TO YOUR PYTHON BACKEND URL
-    // If running locally use: http://localhost:5000/
-    // If deployed use: https://your-python-app.onrender.com/ (or vercel)
     const BACKEND_URL = 'https://elegets-chatbot1.vercel.app/'; 
 
     (function(){ emailjs.init(EMAILJS_PUBLIC_KEY); })();
@@ -891,7 +889,7 @@
             actionBtn.addEventListener('click', sendMessage);
         }
 
-        // --- SEND MESSAGE (STREAMING) ---
+        // --- SEND MESSAGE (STREAMING) - MODIFIED FUNCTION ---
         async function sendMessage() {
             const text = input.value.trim();
             if (!text && pendingFiles.length === 0) return;
@@ -948,7 +946,8 @@
                 div.innerHTML = `<div class="bot-avatar"><i class="fas fa-robot"></i></div><div id="${botId}" class="bot-content"></div>`;
                 container.appendChild(div);
 
-                // Stream Reader
+                // --- STREAM READER LOGIC ---
+                // We use response.body.getReader() instead of .json() because the backend is streaming text chunks
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder("utf-8");
                 let botFullText = "";
@@ -956,17 +955,27 @@
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
+                    
+                    // Decode the chunk (this matches the `yield content` from python)
                     const chunk = decoder.decode(value, { stream: true });
                     botFullText += chunk;
+                    
+                    // Update UI progressively
                     document.getElementById(botId).innerHTML = marked.parse(botFullText);
                     scrollToBottom();
                 }
 
-                // Finalize
+                // Finalize processing (highlighting, etc)
                 div.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
                 messageStore[botId] = botFullText;
-                document.getElementById(botId).innerHTML += `<div class="bot-actions"><button class="action-icon-btn" onclick="copyFromStore('${botId}')"><i class="fas fa-copy"></i></button></div>`;
                 
+                // Add the copy button to the finished message
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'bot-actions';
+                actionsDiv.innerHTML = `<button class="action-icon-btn" onclick="copyFromStore('${botId}')"><i class="fas fa-copy"></i></button>`;
+                document.getElementById(botId).appendChild(actionsDiv);
+                
+                // Save to history
                 conversationHistory.push({ role: "assistant", content: botFullText });
                 localStorage.setItem('elegetsHistory', JSON.stringify(conversationHistory));
 
@@ -1014,6 +1023,6 @@
     window.copyFromStore = function(id) { navigator.clipboard.writeText(messageStore[id]); alert("Copied!"); };
     window.resetChat = function() { localStorage.removeItem('elegetsHistory'); location.reload(); };
 
-    </script>
+</script>
 </body>
 </html>
